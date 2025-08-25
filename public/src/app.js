@@ -11,7 +11,9 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
 
 console.log("Allowed Origins:", allowedOrigins);
 
-// Manual CORS middleware (works reliably on serverless)
+// -----------------
+// GLOBAL CORS middleware
+// -----------------
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -27,15 +29,11 @@ app.use((req, res, next) => {
   );
 
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // stop here for preflight
+    console.log("Preflight received for:", req.path, "from:", origin);
+    return res.sendStatus(200); // short-circuit for preflight
   }
 
   next();
-  if (req.method === "OPTIONS") {
-  console.log("Preflight received for:", req.path);
-  return res.sendStatus(200);
-}
-
 });
 
 app.use(express.json({ limit: "16kb" }));
@@ -66,6 +64,9 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 
+// -----------------
+// Error handler
+// -----------------
 app.use(errorHandler);
 
 export { app };
