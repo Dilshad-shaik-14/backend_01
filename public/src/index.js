@@ -1,13 +1,13 @@
 import dotenv from "dotenv";
-import connectDB from "./db/index.js";
 import { app } from "./app.js";
-import serverless from "serverless-http";
+import connectDB from "./db/index.js";
 
-dotenv.config({ path: "./env" });
+dotenv.config();
 
-// Connect to MongoDB
-await connectDB()
-  .then(() => console.log("MongoDB connected"))
+connectDB()
+  .then(() => {
+    app.listen(process.env.PORT || 8000, () => {
+      console.log(`Server running on port ${process.env.PORT || 8000}`);
+    });
+  })
   .catch(err => console.log("MongoDB connection failed:", err));
-
-export const handler = serverless(app);
