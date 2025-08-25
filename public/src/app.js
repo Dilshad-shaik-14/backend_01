@@ -16,7 +16,6 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-// CORS setup
 const allowedOrigins = [
   "http://localhost:5173",
   "https://dsapp-theta.vercel.app"
@@ -24,18 +23,34 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman, curl, server-side requests
+    if (!origin) return callback(null, true); // server-side or Postman
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error("Not allowed by CORS: " + origin));
+    return callback(new Error("Not allowed by CORS"));
   },
-  credentials: true, // allow cookies
+  credentials: true,
   methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
 };
 
-// Apply CORS
+// Apply CORS to all requests
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // handle preflight
+
+// Explicit OPTIONS handler with headers
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization,x-csrf-token"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.sendStatus(200);
+});
+
+// Middleware
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
 
 // Middleware
 app.use(express.json({ limit: "16kb" }));
