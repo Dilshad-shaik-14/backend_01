@@ -12,13 +12,29 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
 console.log("Allowed Origins:", allowedOrigins);
 
 // Manual CORS middleware (works reliably on serverless)
-app.options("*", (req, res) => {
-  console.log("OPTIONS request received from:", req.headers.origin);
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-csrf-token");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, x-csrf-token"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); // stop here for preflight
+  }
+
+  next();
+  if (req.method === "OPTIONS") {
+  console.log("Preflight received for:", req.path);
   return res.sendStatus(200);
+}
 
 });
 
