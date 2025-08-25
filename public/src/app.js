@@ -15,16 +15,17 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
+// ✅ Define allowed origins clearly
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
-  .map(o => o.trim())
-  .filter(Boolean);
+  .map(o => o.trim());
 
-console.log("Allowed Origins:", allowedOrigins);
+console.log("✅ Allowed Origins:", allowedOrigins);
 
+// ✅ Centralized CORS options
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow server-to-server/postman
+    if (!origin) return callback(null, true); // server-to-server requests
 
     if (
       allowedOrigins.includes(origin) ||
@@ -35,25 +36,24 @@ const corsOptions = {
     }
 
     console.warn(`❌ Blocked CORS request from origin: ${origin}`);
-    // Instead of throwing an error, just reject gracefully
-    return callback(null, false);
+    return callback(new Error("CORS not allowed for origin: " + origin), false);
   },
-  credentials: true,
+  credentials: true, // ✅ allow cookies
   methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
 };
 
-// Apply once, globally
+// ✅ Apply CORS once
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // handle preflight everywhere
+app.options("*", cors(corsOptions)); // handle preflight
 
-// Middleware
+// ✅ Middleware
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 app.use(express.static("public"));
 
-// Routes
+// ✅ Routes
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
@@ -64,7 +64,7 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 
-// Error handler
+// ✅ Error handler
 app.use(errorHandler);
 
 export { app };
