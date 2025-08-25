@@ -21,22 +21,27 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
 
 console.log("Allowed Origins:", allowedOrigins);
 
+// Standard CORS middleware
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); 
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`Blocked CORS request from origin: ${origin}`);
-      callback(new Error("CORS not allowed for origin: " + origin));
-    }
+    if (!origin) return callback(null, true); // server-to-server or curl requests
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.warn(`Blocked CORS request from origin: ${origin}`);
+    return callback(new Error("CORS not allowed"));
   },
   credentials: true,
+  methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 'Authorization', 'x-csrf-token',
-    'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'
-  ],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    'Content-Type','Authorization','x-csrf-token'
+  ]
+}));
+
+// Explicitly handle OPTIONS preflight globally
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','x-csrf-token']
 }));
 
 app.use(express.json({ limit: "16kb" }));
@@ -44,6 +49,7 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 app.use(express.static("public"));
 
+// Routes
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
@@ -54,6 +60,7 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 
+// Error handler
 app.use(errorHandler);
 
 export { app };
