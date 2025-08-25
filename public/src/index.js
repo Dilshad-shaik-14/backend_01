@@ -1,7 +1,13 @@
-import { app } from './app.js';
-import serverless from 'serverless-http';
+import { app } from "./app.js";
+import serverless from "serverless-http";
 
-export const handler = async (req, res) => {
-  // Ensure every request is passed to serverless correctly
-  return serverless(app)(req, res);
-};
+// Export for Vercel
+export const handler = serverless(app);
+
+// Run locally (only if not in serverless environment)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
