@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 import healthcheckRouter from "./routes/healthcheck.routes.js";
@@ -14,21 +15,17 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "https://dsapp-theta.vercel.app"
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,x-csrf-token");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dsapp-theta.vercel.app"
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
+}));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
