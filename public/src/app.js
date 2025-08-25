@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 import healthcheckRouter from "./routes/healthcheck.routes.js";
@@ -14,32 +15,39 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-// Universal CORS middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
 
-  // Allow localhost, main production domain, and all Vercel preview domains
-  if (
-    !origin || 
-    origin.includes("localhost") || 
-    origin.endsWith(".vercel.app") || 
-    origin === process.env.FRONTEND_DOMAIN
-  ) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, x-csrf-token"
-    );
-  } else {
-    console.warn(`Blocked CORS request from origin: ${origin}`);
-  }
+console.log("Allowed Origins:", allowedOrigins);
 
-  if (req.method === "OPTIONS") return res.sendStatus(204); // preflight
-  next();
-});
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow server-to-server/postman
 
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app") ||
+      origin.startsWith("http://localhost")
+    ) {
+      return callback(null, true);
+    }
+
+    console.warn(`❌ Blocked CORS request from origin: ${origin}`);
+    // Instead of throwing an error, just reject gracefully
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
+};
+
+// Apply once, globally
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight everywhere
+
+// Middleware
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
