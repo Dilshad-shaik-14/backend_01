@@ -1,6 +1,5 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 import healthcheckRouter from "./routes/healthcheck.routes.js";
@@ -15,42 +14,31 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map(o => o.trim());
+// Universal CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-console.log("Allowed Origins:", allowedOrigins);
+  // Allow localhost, main production domain, and all Vercel preview domains
+  if (
+    !origin || 
+    origin.includes("localhost") || 
+    origin.endsWith(".vercel.app") || 
+    origin === process.env.FRONTEND_DOMAIN
+  ) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, x-csrf-token"
+    );
+  } else {
+    console.warn(`Blocked CORS request from origin: ${origin}`);
+  }
 
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // server-to-server requests
-    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
-      callback(null, true); // allow production, localhost, and any Vercel preview URL
-    } else {
-      console.warn(`Blocked CORS request from origin: ${origin}`);
-      callback(new Error("CORS not allowed for origin: " + origin));
-    }
-  },
-  credentials: true,
-  methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','x-csrf-token']
-}));
-
-// Explicitly handle OPTIONS preflight requests
-app.options('*', cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS not allowed for origin: " + origin));
-    }
-  },
-  credentials: true,
-  methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','x-csrf-token']
-}));
-
+  if (req.method === "OPTIONS") return res.sendStatus(204); // preflight
+  next();
+});
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
