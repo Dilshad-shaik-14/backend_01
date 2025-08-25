@@ -1,13 +1,19 @@
+import dotenv from "dotenv";
+import connectDB from "./db/index.js";
+import express from "express";
 import { app } from "./app.js";
-import serverless from "serverless-http";
 
-// Export for Vercel
-export const handler = serverless(app);
+dotenv.config({
+    path: './env'
+});
 
-// Run locally (only if not in serverless environment)
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
-}
+connectDB()
+    .then(() => {
+        app.listen(process.env.PORT || 8000, () => {
+            console.log(`Server is running at port: ${process.env.PORT || 8000}`);
+        });
+    })
+    .catch((err) => {
+        console.log("MONGO DB connection failed !!", err);
+    });
+    console.log("NODE_ENV is:", process.env.NODE_ENV);

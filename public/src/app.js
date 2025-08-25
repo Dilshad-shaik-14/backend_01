@@ -1,49 +1,8 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
-const app = express();
-
-// Allowed origins from environment variable
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map(o => o.trim());
-
-console.log("Allowed Origins:", allowedOrigins);
-
-// -----------------
-// GLOBAL CORS middleware
-// -----------------
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, x-csrf-token"
-  );
-
-  if (req.method === "OPTIONS") {
-    console.log("Preflight received for:", req.path, "from:", origin);
-    return res.sendStatus(200); // short-circuit for preflight
-  }
-
-  next();
-});
-
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(cookieParser());
-app.use(express.static("public"));
-
-// -----------------
-// ROUTES
-// -----------------
 import healthcheckRouter from "./routes/healthcheck.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
 import userRouter from "./routes/user.routes.js";
@@ -53,6 +12,37 @@ import videoRouter from "./routes/video.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import likeRouter from "./routes/like.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
+
+const app = express();
+
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map(o => o.trim());
+
+console.log("Allowed Origins:", allowedOrigins);
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); 
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked CORS request from origin: ${origin}`);
+      callback(new Error("CORS not allowed for origin: " + origin));
+    }
+  },
+  credentials: true,
+  allowedHeaders: [
+    'Content-Type', 'Authorization', 'x-csrf-token',
+    'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'
+  ],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
+
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
+app.use(express.static("public"));
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
@@ -64,9 +54,6 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 
-// -----------------
-// Error handler
-// -----------------
 app.use(errorHandler);
 
 export { app };
