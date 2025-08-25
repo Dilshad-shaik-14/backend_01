@@ -5,24 +5,22 @@ import { errorHandler} from "./middlewares/errorHandler.middleware.js";
 
 const app = express()
 
-const allowedOrigins = process.env.CORS_ORIGIN.split(",");
+
+const allowedOrigins = process.env.CORS_ORIGIN.split(",").map(o => o.trim());
 
 const corsOptions = {
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman, curl
-    if (allowedOrigins.includes(origin)) callback(null, true);
-    else callback(new Error("Not allowed by CORS: " + origin));
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token']
 };
 
-app.options('*', cors(corsOptions)); // handle preflight
-app.use(cors(corsOptions)); // handle actual requests
-
-
-
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 app.use(express.json({limit : "16kb"}))
 app.use(express.urlencoded({extended : true , limit : "16kb"}))
