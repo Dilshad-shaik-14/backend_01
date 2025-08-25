@@ -21,31 +21,18 @@ const allowedOrigins = [
   "https://dsapp-theta.vercel.app"
 ];
 
-const corsOptions = {
+app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // server-side or Postman
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
-  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
-};
+  methods: ["GET","POST","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization","x-csrf-token"]
+}));
 
-// Apply CORS to all requests
-app.use(cors(corsOptions));
-
-// Explicit OPTIONS handler with headers
-app.options("*", (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type,Authorization,x-csrf-token"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.sendStatus(200);
-});
+app.options("*", cors()); 
 
 // Middleware
 app.use(express.json({ limit: "16kb" }));

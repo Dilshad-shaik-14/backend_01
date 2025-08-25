@@ -10,5 +10,4 @@ await connectDB()
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log("MongoDB connection failed:", err));
 
-// Export as Vercel serverless function
 export const handler = serverless(app);
