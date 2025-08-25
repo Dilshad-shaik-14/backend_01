@@ -7,19 +7,20 @@ const app = express()
 
 const allowedOrigins = process.env.CORS_ORIGIN.split(",");
 
-app.use(cors({
-  origin: function(origin, callback){
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) !== -1){
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
+const corsOptions = {
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow Postman, curl
+    if (allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error("Not allowed by CORS: " + origin));
   },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-}));
+  methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','x-csrf-token']
+};
+
+app.options('*', cors(corsOptions)); // handle preflight
+app.use(cors(corsOptions)); // handle actual requests
+
 
 
 
