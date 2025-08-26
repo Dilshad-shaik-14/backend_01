@@ -5,12 +5,16 @@ import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express()
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN, // e.g., 'https://dsapp-theta.vercel.app'
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'],
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
+};
+
+app.use(cors(corsOptions));
+
+app.options('*', cors(corsOptions));
 
 
 app.use(express.json({limit : "16kb"}))
