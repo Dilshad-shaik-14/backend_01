@@ -15,33 +15,42 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-// ✅ Use env variable for allowed origins
-const allowedOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [];
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
+
 console.log("Allowed origins:", allowedOrigins);
 
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
+
+// CORS configured BEFORE routes
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow mobile/postman
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS: " + origin));
-      }
+      // allow requests with no origin (curl/postman/server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS: " + origin));
     },
     credentials: true,
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   })
 );
 
-// ✅ Always respond to preflight
+// Ensure preflight always responds with proper headers
 app.options("*", (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,x-csrf-token");
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.sendStatus(200);
+  res.sendStatus(204);
 });
 
 app.use(express.json({ limit: "16kb" }));
