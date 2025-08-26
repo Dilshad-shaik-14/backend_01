@@ -7,6 +7,7 @@ dotenv.config({ path: ".env" });
 let dbConnected = false;
 
 export default async function handler(req, res) {
+  // Connect to MongoDB once
   if (!dbConnected) {
     try {
       await connectDB();
@@ -18,6 +19,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // CORS preflight handling
   if (req.method === "OPTIONS") {
     const corsOrigin = process.env.CORS_ORIGIN;
     res.setHeader("Access-Control-Allow-Origin", corsOrigin);
@@ -30,8 +32,9 @@ export default async function handler(req, res) {
       "Access-Control-Allow-Headers",
       "Content-Type, Authorization, x-csrf-token"
     );
-    return res.status(200).end();
+    return res.status(200).end(); // MUST return 200 OK
   }
 
+  // Forward other requests to Express app
   return app(req, res);
 }
