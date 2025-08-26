@@ -16,25 +16,34 @@ import playlistRouter from "./routes/playlist.routes.js";
 const app = express();
 
 // ✅ Use env variable for allowed origins
-const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [];
+const allowedOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [];
+console.log("Allowed origins:", allowedOrigins);
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow mobile/postman
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("Not allowed by CORS: " + origin));
       }
     },
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
   })
 );
 
-// ✅ Important for OPTIONS preflight requests
-app.options("*", cors());
+// ✅ Always respond to preflight
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,x-csrf-token");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.sendStatus(200);
+});
+
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
@@ -52,4 +61,4 @@ app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use(errorHandler);
 
-export { app };
+export default app;
