@@ -20,7 +20,7 @@ const wrapped = serverless(app);
 
 export default async function handler(req, res) {
   // ✅ Handle preflight immediately (no DB, no app)
-  if (req.method === "OPTIONS") {
+ /* if (req.method === "OPTIONS") {
     console.log("🔵 OPTIONS request reached backend");
 
     res.setHeader(
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-csrf-token");
 
     return res.status(200).end(); // ✅ bail out cleanly
-  }
+  } */
 
   // ✅ only connect DB for real requests
   try {
