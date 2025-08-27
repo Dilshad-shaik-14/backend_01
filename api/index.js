@@ -33,8 +33,10 @@ export default async function handler(req, res) {
 
   // Handle preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  console.log("🔵 OPTIONS request reached backend");
+  return res.status(200).end();
+}
+
 
   try {
     await ensureDB();
