@@ -19,21 +19,25 @@ async function ensureDB() {
 const wrapped = serverless(app);
 
 export default async function handler(req, res) {
-  // Preflight handler
+  // ✅ Handle preflight immediately (no DB, no app)
   if (req.method === "OPTIONS") {
     console.log("🔵 OPTIONS request reached backend");
 
-    res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "http://localhost:5173");
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      process.env.CORS_ORIGIN || "http://localhost:5173"
+    );
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-csrf-token");
 
-    return res.status(200).end();
+    return res.status(200).end(); // ✅ bail out cleanly
   }
 
+  // ✅ only connect DB for real requests
   try {
     await ensureDB();
-    return wrapped(req, res); // ✅ delegate GET/POST/etc. to Express
+    return wrapped(req, res);
   } catch (err) {
     console.error("❌ DB connection error:", err);
     return res.status(500).json({ error: "DB connection failed" });
