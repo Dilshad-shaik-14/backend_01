@@ -26,10 +26,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token", "Access-Control-Allow-Headers", "Access-Control-Allow-Methods", "Access-Control-Allow-Origin"],
   optionsSuccessStatus: 204
 };
-
-
-
 app.use(cors(corsOptions));
+app.use("*", cors(corsOptions));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
