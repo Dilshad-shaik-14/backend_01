@@ -8,19 +8,25 @@ import { mongoose } from 'mongoose';
 import { Subscription } from "../models/subscription.model.js"; 
 import { sendEmail } from "../utils/sendEmail.js";
 
-const generateAccessAndRefreshToken = async (userId) => {
-    try {
-        const user = await User.findById(userId);
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
+export const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId).select("+refreshToken");
+    if (!user) throw new ApiError(404, "User not found");
 
-        user.refreshToken = refreshToken;
-        await user.save({ validateBeforeSave: false });
+    const accessToken = user.generateAccessToken(); // keep payload minimal
+    const refreshToken = user.generateRefreshToken();
 
-        return { accessToken, refreshToken };
-    } catch (error) {
-        throw new ApiError(500, "Token generation failed");
-    }
+    // Update refreshToken in DB
+    await User.findByIdAndUpdate(
+      userId,
+      { refreshToken },
+      { validateBeforeSave: false }
+    );
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(500, "Token generation failed");
+  }
 };
 
 const registerUser = asyncHandler(async (req, res) => {
