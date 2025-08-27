@@ -15,25 +15,26 @@ import playlistRouter from "./routes/playlist.routes.js";
 
 const app = express();
 
-
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
       ? process.env.CORS_ORIGIN
-      : ["http://localhost:5173"],
+      : "http://localhost:5173",
   credentials: true,
   methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token", "Access-Control-Allow-Headers", "Access-Control-Allow-Methods", "Access-Control-Allow-Origin"],
-  optionsSuccessStatus: 204
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+  optionsSuccessStatus: 204,
 };
+
 app.use(cors(corsOptions));
-app.use("*", cors(corsOptions));
+
+// This ensures Express handles OPTIONS requests
+app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
-
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);

@@ -18,10 +18,15 @@ async function ensureDB() {
 const wrapped = serverless(app);
 
 export default async function handler(req, res) {
-  console.log("➡️ Incoming request:", req.method, req.url);
+  // Always set CORS headers manually at Vercel edge
+  res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-csrf-token");
 
+  // Handle OPTIONS requests directly
   if (req.method === "OPTIONS") {
-    console.log("🟡 Preflight OPTIONS request detected for:", req.url);
+    return res.status(200).end();
   }
 
   try {
