@@ -97,53 +97,34 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { userName, password, email } = req.body;
 
-  if (!(userName || email)) {
-    throw new ApiError(400, "Please provide username or email");
-  }
+  if (!(userName || email)) throw new ApiError(400, "Please provide username or email");
+  if (!password) throw new ApiError(400, "Please provide password");
 
-  if (!password) {
-    throw new ApiError(400, "Please provide password");
-  }
+  // Lookup user
+  const user = await User.findOne({ $or: [{ userName }, { email }] }).select("+password +refreshToken");
+  if (!user) throw new ApiError(404, "User not found");
 
-  const user = await User.findOne({
-    $or: [{ userName }, { email }],
-  });
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
+  // Validate password
   const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) throw new ApiError(401, "Invalid credentials");
 
-  if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid User Credentials");
-  }
-
+  // Generate tokens
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
-  const options = {
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // true in prod, false in dev
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // required for cross-origin cookies
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // optional: 7 days
   };
 
-  return res
+  res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        {
-          user: loggedInUser,
-          accessToken,
-          refreshToken,
-        },
-        "User is logged in successfully"
-      )
-    );
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "User logged in successfully"));
 });
 
 
