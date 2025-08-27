@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import serverless from "serverless-http";
+import serverless from "serverless-http"; 
 import app from "../src/app.js";
 import connectDB from "../src/db/index.js";
 
@@ -19,6 +19,23 @@ async function ensureDB() {
 const wrapped = serverless(app);
 
 export default async function handler(req, res) {
+  const corsOrigin = process.env.CORS_ORIGIN;
+  res.setHeader("Access-Control-Allow-Origin", corsOrigin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PATCH, DELETE, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, x-csrf-token"
+  );
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   try {
     await ensureDB();
     return wrapped(req, res);
