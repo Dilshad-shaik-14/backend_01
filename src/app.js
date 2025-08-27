@@ -17,14 +17,19 @@ const app = express();
 
 
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173", 
+  origin:
+    process.env.NODE_ENV === "production"
+      ? process.env.CORS_ORIGIN
+      : ["http://localhost:5173"],
   credentials: true,
   methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods','Access-Control-Allow-Origin'],
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token", "Access-Control-Allow-Headers", "Access-Control-Allow-Methods", "Access-Control-Allow-Origin"],
   optionsSuccessStatus: 204
 };
+
+
+
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));

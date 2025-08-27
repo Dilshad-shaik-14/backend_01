@@ -7,7 +7,7 @@ dotenv.config({ path: ".env" });
 let dbConnected = false;
 
 export default async function handler(req, res) {
-  const corsOrigin = process.env.CORS_ORIGIN || "https://dsapp-theta.vercel.app";
+  const corsOrigin = process.env.CORS_ORIGIN;
 
   res.setHeader("Access-Control-Allow-Origin", corsOrigin);
   res.setHeader("Access-Control-Allow-Credentials", "true");
