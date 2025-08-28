@@ -101,36 +101,56 @@ const registerUser = asyncHandler(async (req, res) => {
 // password check,access and refresh token generation,send cookies,response 
 
 const loginUser = asyncHandler(async (req, res) => {
+  console.log("📩 Incoming login request body:", req.body);
+
   const { userName, password, email } = req.body;
 
-  if (!(userName || email)) throw new ApiError(400, "Please provide username or email");
-  if (!password) throw new ApiError(400, "Please provide password");
+  if (!(userName || email)) {
+    console.log("❌ Missing username or email");
+    throw new ApiError(400, "Please provide username or email");
+  }
+  if (!password) {
+    console.log("❌ Missing password");
+    throw new ApiError(400, "Please provide password");
+  }
 
   // Lookup user
+  console.log("🔍 Looking up user...");
   const user = await User.findOne({ $or: [{ userName }, { email }] }).select("+password +refreshToken");
+  console.log("👤 User lookup result:", user ? "Found" : "Not Found");
+
   if (!user) throw new ApiError(404, "User not found");
 
   // Validate password
+  console.log("🔑 Checking password...");
   const isPasswordValid = await user.isPasswordCorrect(password);
+  console.log("✅ Password valid?", isPasswordValid);
+
   if (!isPasswordValid) throw new ApiError(401, "Invalid credentials");
 
   // Generate tokens
+  console.log("🔐 Generating tokens...");
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
+  // Fetch user without sensitive fields
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  console.log("📦 Final user object prepared");
 
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // optional: 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 
+  console.log("🍪 Setting cookies and sending response...");
   res
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "User logged in successfully"));
+
+  console.log("✅ Login flow completed successfully");
 });
 
 
