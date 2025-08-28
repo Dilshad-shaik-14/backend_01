@@ -344,47 +344,48 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Username is missing");
   }
 
- const cleanUserName = userName.trim().startsWith("@")
-    ? userName.trim().slice(1).toLowerCase()
+  // strip @ if present
+  const normalizedUserName = userName.trim().toLowerCase().startsWith("@")
+    ? userName.trim().toLowerCase().slice(1)
     : userName.trim().toLowerCase();
 
   const channel = await User.aggregate([
     {
       $match: {
-        userName: normalizedUserName
-      }
+        userName: normalizedUserName,
+      },
     },
     {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
-        as: "subscribers"
-      }
+        as: "subscribers",
+      },
     },
     {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
-        as: "subscribedTo"
-      }
+        as: "subscribedTo",
+      },
     },
     {
       $lookup: {
         from: "tweets",
         localField: "_id",
         foreignField: "owner",
-        as: "tweets"
-      }
+        as: "tweets",
+      },
     },
     {
       $lookup: {
         from: "videos",
         localField: "_id",
         foreignField: "owner",
-        as: "videos"
-      }
+        as: "videos",
+      },
     },
     {
       $addFields: {
@@ -396,10 +397,10 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           $cond: {
             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
-            else: false
-          }
-        }
-      }
+            else: false,
+          },
+        },
+      },
     },
     {
       $project: {
@@ -414,14 +415,15 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         avatar: 1,
         coverImage: 1,
         email: 1,
-        createdAt: 1
-      }
-    }
+        createdAt: 1,
+      },
+    },
   ]);
 
   if (!channel?.length) {
     throw new ApiError(404, "Channel does not exist");
   }
+
   return res
     .status(200)
     .json(new ApiResponse(200, channel[0], "Channel details fetched successfully"));
