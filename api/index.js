@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
   try {
     await ensureDB();
-    await wrapped(req, res); // ✅ Await the wrapped function
+    return app(req, res);
   } catch (err) {
     console.error("❌ DB connection error:", err);
 
