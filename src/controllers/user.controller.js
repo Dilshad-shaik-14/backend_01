@@ -338,19 +338,20 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 })
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-  let { userName } = req.params;
+  const { userName } = req.params;
 
   if (!userName?.trim()) {
     throw new ApiError(400, "Username is missing");
   }
 
-  // decode URI (in case it's %40) and strip leading "@"
-  userName = decodeURIComponent(userName).replace(/^@/, "");
-
   const normalizedUserName = userName.trim().toLowerCase();
 
   const channel = await User.aggregate([
-    { $match: { userName: normalizedUserName } },
+    {
+      $match: {
+        userName: normalizedUserName
+      }
+    },
     {
       $lookup: {
         from: "subscriptions",
@@ -420,7 +421,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel does not exist");
   }
 
-  return res.status(200).json(channel[0]);
+  res.status(200).json(channel[0]);
 });
 
 
