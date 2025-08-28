@@ -343,14 +343,17 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!userName?.trim()) {
     throw new ApiError(400, "Username is missing");
   }
+    userName = decodeURIComponent(userName);
 
-  const normalizedUserName = userName.trim().toLowerCase();
+    const normalizedUserName = userName.startsWith("@")
+      ? userName.slice(1)
+      : userName;
 
-  const channel = await User.aggregate([
-    {
-      $match: {
-        userName: normalizedUserName
-      }
+    const channel = await User.aggregate([
+      {
+        $match: {
+          userName: { $regex: `^${normalizedUserName}$`, $options: "i" },
+        },
     },
     {
       $lookup: {
