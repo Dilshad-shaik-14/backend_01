@@ -337,97 +337,70 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { user }, "Cover image is updated successfully"));
 })
 
-const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const { userName } = req.params;
+export const getUserChannelProfile = async (req, res) => {
+  try {
+    let { userName } = req.params;
 
-  if (!userName?.trim()) {
-    throw new ApiError(400, "Username is missing");
-  }
+    // strip @ if it exists
+    const normalizedUserName = userName.startsWith("@")
+      ? userName.slice(1)
+      : userName;
 
-  // strip @ if present
-  const normalizedUserName = userName.trim().toLowerCase().startsWith("@")
-    ? userName.trim().toLowerCase().slice(1)
-    : userName.trim().toLowerCase();
-
-  const channel = await User.aggregate([
-    {
-      $match: {
-        userName: normalizedUserName,
+    const channel = await User.aggregate([
+      {
+        $match: {
+          userName: { $regex: `^${normalizedUserName}$`, $options: "i" },
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribers",
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "subscriber",
-        as: "subscribedTo",
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "tweets",
-        localField: "_id",
-        foreignField: "owner",
-        as: "tweets",
-      },
-    },
-    {
-      $lookup: {
-        from: "videos",
-        localField: "_id",
-        foreignField: "owner",
-        as: "videos",
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: { $size: "$subscribers" },
-        subscribedToCount: { $size: "$subscribedTo" },
-        tweetsCount: { $size: "$tweets" },
-        videosCount: { $size: "$videos" },
-        isSubscribed: {
-          $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            then: true,
-            else: false,
+      {
+        $addFields: {
+          subscribersCount: { $size: "$subscribers" },
+          channelsSubscribedToCount: { $size: "$subscribedTo" },
+          isSubscribed: {
+            $in: [req.user?._id, "$subscribers.subscriber"],
           },
         },
       },
-    },
-    {
-      $project: {
-        subscribersCount: 1,
-        subscribedToCount: 1,
-        tweetsCount: 1,
-        videosCount: 1,
-        tweets: 1,
-        videos: 1,
-        fullName: 1,
-        userName: 1,
-        avatar: 1,
-        coverImage: 1,
-        email: 1,
-        createdAt: 1,
+      {
+        $project: {
+          fullName: 1,
+          userName: 1,
+          email: 1,
+          avatar: 1,
+          coverImage: 1,
+          subscribersCount: 1,
+          channelsSubscribedToCount: 1,
+          isSubscribed: 1,
+        },
       },
-    },
-  ]);
+    ]);
 
-  if (!channel?.length) {
-    throw new ApiError(404, "Channel does not exist");
+    if (!channel.length) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+    return res.status(200).json(channel[0]);
+  } catch (error) {
+    console.error("Error fetching channel:", error);
+    return res.status(500).json({ message: "Server error" });
   }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, channel[0], "Channel details fetched successfully"));
-});
+};
 
 
 
