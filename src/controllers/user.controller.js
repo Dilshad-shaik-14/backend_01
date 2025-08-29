@@ -348,9 +348,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   const channel = await User.aggregate([
     {
-      $match: {
-        userName: normalizedUserName
-      }
+      $match: { userName: normalizedUserName }
     },
     {
       $lookup: {
@@ -419,6 +417,16 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   if (!channel?.length) {
     throw new ApiError(404, "Channel does not exist");
+  }
+
+  const API_BASE = process.env.API_BASE || "http://localhost:5000";
+
+  // prepend API_BASE so frontend always gets a usable URL
+  if (channel[0].avatar) {
+    channel[0].avatar = `${API_BASE}${channel[0].avatar}`;
+  }
+  if (channel[0].coverImage) {
+    channel[0].coverImage = `${API_BASE}${channel[0].coverImage}`;
   }
 
   res.status(200).json(channel[0]);
