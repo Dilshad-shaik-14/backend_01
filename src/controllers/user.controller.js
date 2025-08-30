@@ -427,6 +427,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   }
 });
 
+  console.log("channelData >>>", channelData);
 
   res.status(200).json(channelData);
 });
