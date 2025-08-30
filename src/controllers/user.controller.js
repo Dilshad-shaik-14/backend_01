@@ -347,9 +347,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const normalizedUserName = userName.trim().toLowerCase();
 
   const channel = await User.aggregate([
-    {
-      $match: { userName: normalizedUserName }
-    },
+    { $match: { userName: normalizedUserName } },
     {
       $lookup: {
         from: "subscriptions",
@@ -419,19 +417,23 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel does not exist");
   }
 
-  const API_BASE = process.env.API_BASE || "https://dsbackend.vercel.app";
-
   const channelData = channel[0];
 
-// Only prepend API_BASE if it's a relative path
+  const BASE_URL = process.env.BASE_URL || "https://dsbackend.vercel.app";
+
   ["avatar", "coverImage"].forEach((field) => {
-    if (channelData[field] && !channelData[field].startsWith("http")) {
-      channelData[field] = `${API_BASE}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
+    if (channelData[field]) {
+      try {
+        new URL(channelData[field]);
+      } catch (err) {
+        channelData[field] = `${BASE_URL}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
+      }
     }
   });
 
   res.status(200).json(channelData);
 });
+
 
 
 
