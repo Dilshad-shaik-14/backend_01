@@ -353,32 +353,32 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
-        as: "subscribers"
-      }
+        as: "subscribers",
+      },
     },
     {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
-        as: "subscribedTo"
-      }
+        as: "subscribedTo",
+      },
     },
     {
       $lookup: {
         from: "tweets",
         localField: "_id",
         foreignField: "owner",
-        as: "tweets"
-      }
+        as: "tweets",
+      },
     },
     {
       $lookup: {
         from: "videos",
         localField: "_id",
         foreignField: "owner",
-        as: "videos"
-      }
+        as: "videos",
+      },
     },
     {
       $addFields: {
@@ -386,8 +386,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         subscribedToCount: { $size: "$subscribedTo" },
         tweetsCount: { $size: "$tweets" },
         videosCount: { $size: "$videos" },
-        isSubscribed: false // default false for now
-      }
+        isSubscribed: false,
+      },
     },
     {
       $project: {
@@ -402,9 +402,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         avatar: 1,
         coverImage: 1,
         email: 1,
-        createdAt: 1
-      }
-    }
+        createdAt: 1,
+      },
+    },
   ]);
 
   if (!channel?.length) {
@@ -414,17 +414,17 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const channelData = channel[0];
   const BASE_URL = process.env.BASE_URL || "https://dsbackend.vercel.app";
 
+  // FIX: make sure both avatar and coverImage are full URLs
   ["avatar", "coverImage"].forEach((field) => {
     if (!channelData[field]) {
-      // set default images
-      channelData[field] = field === "avatar"
-        ? `${BASE_URL}/default-avatar.png`
-        : `${BASE_URL}/default-cover.jpg`;
+      // default images
+      channelData[field] =
+        field === "avatar"
+          ? `${BASE_URL}/default-avatar.png`
+          : `${BASE_URL}/default-cover.jpg`;
     } else {
-      // prepend BASE_URL if not a full URL
-      try {
-        new URL(channelData[field]);
-      } catch {
+      // prepend BASE_URL if it’s a relative path
+      if (!/^https?:\/\//i.test(channelData[field])) {
         channelData[field] = `${BASE_URL}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
       }
     }
