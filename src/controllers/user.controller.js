@@ -419,16 +419,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel does not exist");
   }
 
-  const API_BASE = process.env.API_BASE;
+const API_BASE = process.env.API_BASE;
 
-// prepend API_BASE only if it's a relative path
-  if (channel[0].avatar && !channel[0].avatar.startsWith("http")) {
-    channel[0].avatar = `${API_BASE}${channel[0].avatar}`;
+// Only prepend if avatar/coverImage is relative
+  ['avatar', 'coverImage'].forEach(field => {
+  if (channel[0][field] && !channel[0][field].startsWith('http')) {
+    channel[0][field] = `${API_BASE}${channel[0][field]}`;
   }
-  if (channel[0].coverImage && !channel[0].coverImage.startsWith("http")) {
-    channel[0].coverImage = `${API_BASE}${channel[0].coverImage}`;
-  }
-
+  });
 
   res.status(200).json(channel[0]);
 });
