@@ -79,7 +79,7 @@ const publishVideo = asyncHandler(async (req, res) => {
     thumbnail,
     description,
     title,
-    duration: 0, // optional: you can compute this in frontend if needed
+    duration, // optional: you can compute this in frontend if needed
     owner,
     isPublished,
   });
@@ -173,9 +173,10 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
 
     const thumbUpload = await uploadOnCloudinary(
-      req.files.thumbnail[0].path,
+      req.files.thumbnail[0].buffer, // 👈 directly use buffer
       "image"
     );
+
     if (!thumbUpload?.url) {
       throw new ApiError(500, "Thumbnail upload failed");
     }
@@ -184,15 +185,15 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   // ✅ Handle video replacement
   if (req.files?.videoFile?.[0]) {
-    // delete old video if exists
     if (video.videoFile) {
       await deleteFileByUrl(video.videoFile, "video");
     }
 
     const videoUpload = await uploadOnCloudinary(
-      req.files.videoFile[0].path,
+      req.files.videoFile[0].buffer, // 👈 directly use buffer
       "video"
     );
+
     if (!videoUpload?.url) {
       throw new ApiError(500, "Video upload failed");
     }
