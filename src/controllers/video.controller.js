@@ -153,7 +153,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { title, description } = req.body;
+  const { title, description, thumbnail, videoFile } = req.body;
 
   // Validate ID
   if (!isValidObjectId(videoId)) {
@@ -165,56 +165,21 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-  // ✅ Handle thumbnail replacement
-  if (req.files?.thumbnail?.[0]) {
-    // delete old thumbnail if exists
-    if (video.thumbnail) {
-      await deleteFileByUrl(video.thumbnail, "image");
-    }
-
-    const thumbUpload = await uploadOnCloudinary(
-      req.files.thumbnail[0].buffer, // 👈 directly use buffer
-      "image"
-    );
-
-    if (!thumbUpload?.url) {
-      throw new ApiError(500, "Thumbnail upload failed");
-    }
-    video.thumbnail = thumbUpload.url;
-  }
-
-  // ✅ Handle video replacement
-  if (req.files?.videoFile?.[0]) {
-    if (video.videoFile) {
-      await deleteFileByUrl(video.videoFile, "video");
-    }
-
-    const videoUpload = await uploadOnCloudinary(
-      req.files.videoFile[0].buffer, // 👈 directly use buffer
-      "video"
-    );
-
-    if (!videoUpload?.url) {
-      throw new ApiError(500, "Video upload failed");
-    }
-
-    video.videoFile = videoUpload.url;
-    if (videoUpload.duration) {
-      video.duration = videoUpload.duration;
-    }
-  }
-
-  // ✅ Update text fields
+  // ✅ Update fields only if provided
   if (title?.trim()) video.title = title.trim();
   if (description?.trim()) video.description = description.trim();
+  if (thumbnail) video.thumbnail = thumbnail;
+  if (videoFile) video.videoFile = videoFile;
 
   const updatedVideo = await video.save();
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, updatedVideo.toObject(), "Video updated successfully")
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      updatedVideo.toObject(),
+      "Video updated successfully"
+    )
+  );
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
