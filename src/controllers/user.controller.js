@@ -421,13 +421,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   const API_BASE = process.env.API_BASE;
 
-  // prepend API_BASE so frontend always gets a usable URL
-  if (channel[0].avatar) {
+// prepend API_BASE only if it's a relative path
+  if (channel[0].avatar && !channel[0].avatar.startsWith("http")) {
     channel[0].avatar = `${API_BASE}${channel[0].avatar}`;
   }
-  if (channel[0].coverImage) {
+  if (channel[0].coverImage && !channel[0].coverImage.startsWith("http")) {
     channel[0].coverImage = `${API_BASE}${channel[0].coverImage}`;
   }
+
 
   res.status(200).json(channel[0]);
 });
