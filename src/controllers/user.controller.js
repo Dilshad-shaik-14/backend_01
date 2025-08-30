@@ -344,7 +344,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Username is missing" });
   }
 
-  const normalizedUserName = userName.trim().toLowerCase();
+  const normalizedUserName = userName.replace(/[\r\n\s]+/g, "").toLowerCase();
 
   const channel = await User.aggregate([
     { $match: { userName: normalizedUserName } },
@@ -432,8 +432,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   res.status(200).json(channelData);
 });
-
-
 
 
 const getWatchHistory = asyncHandler(async (req, res) => {
