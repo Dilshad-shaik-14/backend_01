@@ -419,18 +419,18 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel does not exist");
   }
 
-const API_BASE = process.env.API_BASE || "https://dsbackend.vercel.app";
+  const API_BASE = process.env.API_BASE || "https://dsbackend.vercel.app";
 
-// prepend API_BASE only if the URL is relative
-if (channel.avatar && !channel.avatar.startsWith("http")) {
-  channel.avatar = `${API_BASE}${channel.avatar.startsWith("/") ? "" : "/"}${channel.avatar}`;
-}
-if (channel.coverImage && !channel.coverImage.startsWith("http")) {
-  channel.coverImage = `${API_BASE}${channel.coverImage.startsWith("/") ? "" : "/"}${channel.coverImage}`;
-}
+  const channelData = channel[0];
 
+// Only prepend API_BASE if it's a relative path
+  ["avatar", "coverImage"].forEach((field) => {
+    if (channelData[field] && !channelData[field].startsWith("http")) {
+      channelData[field] = `${API_BASE}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
+    }
+  });
 
-  res.status(200).json(channel[0]);
+  res.status(200).json(channelData);
 });
 
 
