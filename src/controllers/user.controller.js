@@ -341,7 +341,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { userName } = req.params;
 
   if (!userName?.trim()) {
-    throw new ApiError(400, "Username is missing");
+    return res.status(400).json({ message: "Username is missing" });
   }
 
   const normalizedUserName = userName.trim().toLowerCase();
@@ -386,13 +386,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         subscribedToCount: { $size: "$subscribedTo" },
         tweetsCount: { $size: "$tweets" },
         videosCount: { $size: "$videos" },
-        isSubscribed: {
-          $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            then: true,
-            else: false
-          }
-        }
+        isSubscribed: false // default false for now
       }
     },
     {
@@ -414,18 +408,23 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   ]);
 
   if (!channel?.length) {
-    throw new ApiError(404, "Channel does not exist");
+    return res.status(404).json({ message: "Channel does not exist" });
   }
 
   const channelData = channel[0];
-
   const BASE_URL = process.env.BASE_URL || "https://dsbackend.vercel.app";
 
   ["avatar", "coverImage"].forEach((field) => {
-    if (channelData[field]) {
+    if (!channelData[field]) {
+      // set default images
+      channelData[field] = field === "avatar"
+        ? `${BASE_URL}/default-avatar.png`
+        : `${BASE_URL}/default-cover.jpg`;
+    } else {
+      // prepend BASE_URL if not a full URL
       try {
         new URL(channelData[field]);
-      } catch (err) {
+      } catch {
         channelData[field] = `${BASE_URL}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
       }
     }
