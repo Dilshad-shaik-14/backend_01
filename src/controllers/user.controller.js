@@ -414,21 +414,19 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const channelData = channel[0];
   const BASE_URL = process.env.BASE_URL || "https://dsbackend.vercel.app";
 
-  // FIX: make sure both avatar and coverImage are full URLs
-  ["avatar", "coverImage"].forEach((field) => {
-    if (!channelData[field]) {
-      // default images
-      channelData[field] =
-        field === "avatar"
-          ? `${BASE_URL}/default-avatar.png`
-          : `${BASE_URL}/default-cover.jpg`;
-    } else {
-      // prepend BASE_URL if it’s a relative path
-      if (!/^https?:\/\//i.test(channelData[field])) {
-        channelData[field] = `${BASE_URL}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
-      }
-    }
-  });
+["avatar", "coverImage"].forEach((field) => {
+  if (!channelData[field]) {
+    // fallback defaults
+    channelData[field] =
+      field === "avatar"
+        ? "https://res.cloudinary.com/dt7oflvcs/image/upload/v123/default-avatar.png"
+        : "https://res.cloudinary.com/dt7oflvcs/image/upload/v123/default-cover.jpg";
+  } else if (!/^https?:\/\//i.test(channelData[field])) {
+    // only prepend BASE_URL for local file paths
+    channelData[field] = `${BASE_URL}${channelData[field].startsWith("/") ? "" : "/"}${channelData[field]}`;
+  }
+});
+
 
   res.status(200).json(channelData);
 });
