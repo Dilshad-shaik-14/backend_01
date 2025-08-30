@@ -419,7 +419,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel does not exist");
   }
 
-  const API_BASE = process.env.API_BASE || "http://localhost:5000";
+  const API_BASE = process.env.API_BASE;
 
   // prepend API_BASE so frontend always gets a usable URL
   if (channel[0].avatar) {

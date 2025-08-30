@@ -59,7 +59,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const publishVideo = asyncHandler(async (req, res) => {
-  const { title, description, isPublished = true } = req.body;
+  const { title, description, videoFile, thumbnail, isPublished = true } = req.body;
 
   if (!title || !description) {
     throw new ApiError(400, "Title and description are required");
@@ -70,37 +70,23 @@ const publishVideo = asyncHandler(async (req, res) => {
 
   const owner = req.user._id;
 
-  const videoFileLocalPath = req.files?.videoFile?.[0]?.path;
-  const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
-
-  if (!videoFileLocalPath || !thumbnailLocalPath) {
-    throw new ApiError(400, "Video and thumbnail files are required");
-  }
-
-  // Upload files to Cloudinary
-  const videoFile = await uploadOnCloudinary(videoFileLocalPath, "video");
-  const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-
   if (!videoFile || !thumbnail) {
-    throw new ApiError(500, "Error while uploading files to Cloudinary");
-  }
-
-  if (!videoFile.duration) {
-    throw new ApiError(400, "Video duration is required but missing");
+    throw new ApiError(400, "Video and thumbnail URLs are required");
   }
 
   const uploadedVideo = await Video.create({
-    videoFile: videoFile.url,
-    thumbnail: thumbnail.url,
+    videoFile,
+    thumbnail,
     description,
     title,
-    duration: videoFile.duration,
+    duration: 0, // optional: you can compute this in frontend if needed
     owner,
     isPublished,
   });
 
   res.status(201).json(new ApiResponse(201, uploadedVideo, "Video published successfully"));
 });
+
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
