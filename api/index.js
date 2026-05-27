@@ -53,4 +53,17 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "DB connection failed" });
   }
 }
-console.log("Connecting to DB with URI:", process.env.MONGO_URI);
+
+// Local development server
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 8000;
+  ensureDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`⚙️  Server is running locally at http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("❌ Local server failed to start:", err);
+    });
+}

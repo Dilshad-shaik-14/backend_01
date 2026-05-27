@@ -36,6 +36,11 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
+// Root status check
+app.get("/", (req, res) => {
+  res.json({ message: "Server is running! 🚀" });
+});
+
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/tweets", tweetRouter);
