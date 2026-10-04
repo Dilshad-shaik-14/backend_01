@@ -10,13 +10,16 @@ import { sendEmail } from "../utils/sendEmail.js";
 
 export const generateAccessAndRefreshToken = async (userId) => {
   try {
+    if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+      throw new ApiError(500, "Authentication secrets are not configured on the server");
+    }
+
     const user = await User.findById(userId).select("+refreshToken");
     if (!user) throw new ApiError(404, "User not found");
 
-    const accessToken = user.generateAccessToken(); // keep payload minimal
+    const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
-    // Update refreshToken in DB
     await User.findByIdAndUpdate(
       userId,
       { refreshToken },
@@ -25,7 +28,8 @@ export const generateAccessAndRefreshToken = async (userId) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "Token generation failed");
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, error?.message || "Token generation failed");
   }
 };
 
@@ -104,8 +108,10 @@ const loginUser = asyncHandler(async (req, res) => {
   console.log("📩 Incoming login request body:", req.body);
 
   const { userName, password, email } = req.body;
+  const normalizedUserName = typeof userName === "string" ? userName.trim().toLowerCase() : "";
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-  if (!(userName || email)) {
+  if (!(normalizedUserName || normalizedEmail)) {
     console.log("❌ Missing username or email");
     throw new ApiError(400, "Please provide username or email");
   }
@@ -114,14 +120,14 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide password");
   }
 
-  // Lookup user
   console.log("🔍 Looking up user...");
-  const user = await User.findOne({ $or: [{ userName }, { email }] }).select("+password +refreshToken");
+  const user = await User.findOne({
+    $or: [{ userName: normalizedUserName }, { email: normalizedEmail }],
+  }).select("+password +refreshToken");
   console.log("👤 User lookup result:", user ? "Found" : "Not Found");
 
   if (!user) throw new ApiError(404, "User not found");
 
-  // Validate password
   console.log("🔑 Checking password...");
   const isPasswordValid = await user.isPasswordCorrect(password);
   console.log("✅ Password valid?", isPasswordValid);

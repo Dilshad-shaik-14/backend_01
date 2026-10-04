@@ -17,6 +17,13 @@ async function ensureDB() {
 const wrapped = serverless(app);
 
 export default async function handler(req, res) {
+  if (!process.env.MONGO_URI) {
+    console.error("❌ Missing MONGO_URI environment variable");
+    res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "http://localhost:5173");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    return res.status(500).json({ error: "Server configuration error: MONGO_URI is missing" });
+  }
+
   // Always set CORS headers manually at Vercel edge
   res.setHeader(
     "Access-Control-Allow-Origin",
